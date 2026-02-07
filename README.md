@@ -1,6 +1,6 @@
 # Vendoo Site Refresher
 
-This project uses Playwright to automate opening multiple browser windows.
+This project uses Playwright to automate refreshing a website at a regular interval.
 
 ## Prerequisites
 
@@ -15,15 +15,23 @@ This project uses Playwright to automate opening multiple browser windows.
 
 2. Install Playwright browsers:
    ```bash
-   npx playwright install chromium
+   bunx playwright install chromium
+   ```
+
+3. Create a `.env` file in the root directory:
+   ```env
+   VENDOO_URL='https://example.com'
+   VENDOO_USERNAME='your_username'
+   VENDOO_PASSWORD='your_password'
+   REFRESH_INTERVAL_MS=5000
    ```
 
 ## Usage
 
-To launch 3 Chrome (Chromium) windows browsing to different websites:
+To start the refresher:
 
 ```bash
 bun start
 ```
 
-This will open 3 separate browser windows and navigate to Google, Bing, and DuckDuckGo. The script will keep the windows open until you terminate it (Ctrl+C).
+The script will open a Chromium window, navigate to the specified URL, and refresh the page every 5 seconds (or whatever interval you specified). Press `Ctrl+C` to stop and close the browser gracefully.
