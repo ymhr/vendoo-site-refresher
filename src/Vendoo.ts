@@ -12,27 +12,34 @@ export class Vendoo implements BaseSite {
     context!: BrowserContext
 
     private get emailInput() {
-        return this.page.getByLabel('Email').and(this.page.locator('input'));
+        return this.ensurePage().getByLabel('Email').and(this.page.locator('input'));
     }
 
     private get passwordInput() {
-        return this.page.getByLabel('Password').and(this.page.locator('input'));
+        return this.ensurePage().getByLabel('Password').and(this.page.locator('input'));
     }
 
     private get loginButton() {
-        return this.page.getByRole('button').getByText('Login');
+        return this.ensurePage().getByRole('button').getByText('Login');
     }
 
     private get inventoryHeading() {
-        return this.page.getByRole('heading', { name: 'Inventory', exact: true });
+        return this.ensurePage().getByRole('heading', { name: 'Inventory', exact: true });
     }
 
     private get newItemLink() {
-        return this.page.getByRole('link', { name: 'New Item', exact: true });
+        return this.ensurePage().getByRole('link', { name: 'New Item', exact: true });
     }
 
     constructor(browser: Browser) {
         this.browser = browser;
+    }
+
+    private ensurePage() {
+        if (!this.page) {
+            throw new Error('Page not initialized. Call openSite() first.');
+        }
+        return this.page;
     }
 
     async openSite(): Promise<void> {
@@ -45,12 +52,14 @@ export class Vendoo implements BaseSite {
     }
 
     async logIn(): Promise<void> {
+        this.ensurePage();
         await this.fillUsernameField();
         await this.fillPasswordField();
         await this.loginButton.click();
     }
 
     async isOnLogInPage(): Promise<boolean> {
+        this.ensurePage();
         const isLoginButtonVisible = await this.loginButton.isVisible();
 
         const emailTextCount = await this.emailInput.count();
@@ -65,6 +74,7 @@ export class Vendoo implements BaseSite {
     }
 
     async isLoggedIn(): Promise<boolean> {
+        this.ensurePage();
         const isInventoryHeadingVisible = await this.inventoryHeading.isVisible();
         const isNewItemLinkVisible = await this.newItemLink.isVisible();
 
@@ -72,7 +82,7 @@ export class Vendoo implements BaseSite {
     }
 
     async refresh(): Promise<void> {
-        await this.page.reload()
+        await this.ensurePage().reload()
     }
 
     async fillUsernameField() {
@@ -81,6 +91,5 @@ export class Vendoo implements BaseSite {
 
     async fillPasswordField() {
         await this.passwordInput.fill(this.password);
-        console.log(this.password)
     }
 }

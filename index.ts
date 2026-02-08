@@ -31,7 +31,12 @@ async function main() {
   const intervalMs = parseInt(process.env.REFRESH_INTERVAL_MS || '5000', 10);
   console.log(`Automation running. Refreshing every ${intervalMs}ms. Press Ctrl+C to stop.`);
 
-  const interval = setInterval(async () => {
+  let isRunning = true;
+  let timeoutId: Timer | null = null;
+
+  async function runLoop() {
+    if (!isRunning) return;
+
     try {
       const loggedIn = await vendoo.isLoggedIn();
       if (loggedIn) {
@@ -43,12 +48,21 @@ async function main() {
       }
     } catch (error) {
       console.error('Error during refresh:', error);
+    } finally {
+      if (isRunning) {
+        timeoutId = setTimeout(runLoop, intervalMs);
+      }
     }
-  }, intervalMs);
+  }
+
+  runLoop();
 
   const cleanup = async () => {
     console.log('\nStopping automation...');
-    clearInterval(interval);
+    isRunning = false;
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
     await browser.close();
     process.exit(0);
   };
