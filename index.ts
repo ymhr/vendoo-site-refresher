@@ -11,11 +11,16 @@ async function main() {
   
   try {
     await vendoo.openSite();
-    const status = await vendoo.isLoggedIn();
-    console.log({status})
+    const loggedIn = await vendoo.isLoggedIn();
+    console.log({ loggedIn });
 
-    if(!status) {
-      await vendoo.logIn();
+    if (!loggedIn) {
+      const isOnLogInPage = await vendoo.isOnLogInPage();
+      console.log({ isOnLogInPage })
+
+      if (isOnLogInPage) {
+        await vendoo.logIn();
+      }
     }
   } catch (error) {
     console.error('Failed to open site:', error);
@@ -25,14 +30,17 @@ async function main() {
 
   const intervalMs = parseInt(process.env.REFRESH_INTERVAL_MS || '5000', 10);
   console.log(`Automation running. Refreshing every ${intervalMs}ms. Press Ctrl+C to stop.`);
-  
+
   const interval = setInterval(async () => {
     try {
-      console.log(`${new Date().toISOString()} - Refreshing...`);
-      // await vendoo.refresh();
-      // console.log('...refreshed!')
-      // const status = await vendoo.checkStatus();
-      // console.log(`status: ${status}`)
+      const loggedIn = await vendoo.isLoggedIn();
+      if (loggedIn) {
+        console.log(`${new Date().toISOString()} - Refreshing...`);
+        await vendoo.refresh();
+        console.log('...refreshed!')
+      } else {
+        console.log('Not logged in, skipping refresh.');
+      }
     } catch (error) {
       console.error('Error during refresh:', error);
     }

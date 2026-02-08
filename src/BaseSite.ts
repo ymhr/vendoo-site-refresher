@@ -10,6 +10,8 @@ export interface BaseSite {
 
     logIn(): Promise<void>
 
+    isOnLogInPage(): Promise<boolean>;
+
     isLoggedIn(): Promise<boolean>;
 
     refresh(): Promise<void>;
