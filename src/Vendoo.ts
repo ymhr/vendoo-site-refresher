@@ -1,6 +1,8 @@
 import { type Browser, type BrowserContext, type Page } from "playwright";
 import type { BaseSite } from "./BaseSite";
 import { ensureEnvString } from "./utils";
+import fs from "fs";
+import path from "path";
 
 
 export class Vendoo implements BaseSite {
@@ -10,6 +12,7 @@ export class Vendoo implements BaseSite {
     browser: Browser;
     page!: Page;
     context!: BrowserContext
+    sessionPath = path.join(process.cwd(), 'session-vendoo.json');
 
     private get emailInput() {
         return this.ensurePage().getByLabel('Email').and(this.page.locator('input'));
@@ -43,7 +46,10 @@ export class Vendoo implements BaseSite {
     }
 
     async openSite(): Promise<void> {
-        const context = await this.browser.newContext();
+        const contextOptions = fs.existsSync(this.sessionPath)
+            ? { storageState: this.sessionPath }
+            : {};
+        const context = await this.browser.newContext(contextOptions);
         const page = await context.newPage();
         await page.goto(this.url);
         console.log(`Opened ${this.url} in a new window`);
@@ -56,6 +62,11 @@ export class Vendoo implements BaseSite {
         await this.fillUsernameField();
         await this.fillPasswordField();
         await this.loginButton.click();
+
+        // Wait for login to complete and save session
+        await this.inventoryHeading.waitFor({ state: 'visible' });
+        await this.context.storageState({ path: this.sessionPath });
+        console.log(`Saved session to ${this.sessionPath}`);
     }
 
     async isOnLogInPage(): Promise<boolean> {

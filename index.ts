@@ -1,5 +1,7 @@
 import { chromium } from 'playwright';
 import { Vendoo } from './src/Vendoo';
+import { Vinted } from './src/Vinted';
+import type { BaseSite } from './src/BaseSite';
 
 async function main() {
   const browser = await chromium.launch({
@@ -7,29 +9,36 @@ async function main() {
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
-  const vendoo = new Vendoo(browser);
-  
+  const siteType = (process.env.SITE_TYPE || 'vendoo').toLowerCase();
+  let site: BaseSite;
+
+  if (siteType === 'vinted') {
+    site = new Vinted(browser);
+  } else {
+    site = new Vendoo(browser);
+  }
+
   try {
-    await vendoo.openSite();
-    const loggedIn = await vendoo.isLoggedIn();
+    await site.openSite();
+    const loggedIn = await site.isLoggedIn();
     console.log({ loggedIn });
 
     if (!loggedIn) {
-      const isOnLogInPage = await vendoo.isOnLogInPage();
+      const isOnLogInPage = await site.isOnLogInPage();
       console.log({ isOnLogInPage })
 
       if (isOnLogInPage) {
-        await vendoo.logIn();
+        await site.logIn();
       }
     }
   } catch (error) {
-    console.error('Failed to open site:', error);
+    console.error(`Failed to open site ${siteType}:`, error);
     await browser.close();
     process.exit(1);
   }
 
   const intervalMs = parseInt(process.env.REFRESH_INTERVAL_MS || '5000', 10);
-  console.log(`Automation running. Refreshing every ${intervalMs}ms. Press Ctrl+C to stop.`);
+  console.log(`Automation running for ${siteType}. Refreshing every ${intervalMs}ms. Press Ctrl+C to stop.`);
 
   let isRunning = true;
   let timeoutId: Timer | null = null;
@@ -38,16 +47,16 @@ async function main() {
     if (!isRunning) return;
 
     try {
-      const loggedIn = await vendoo.isLoggedIn();
+      const loggedIn = await site.isLoggedIn();
       if (loggedIn) {
-        console.log(`${new Date().toISOString()} - Refreshing...`);
-        await vendoo.refresh();
+        console.log(`${new Date().toISOString()} - [${siteType}] Refreshing...`);
+        await site.refresh();
         console.log('...refreshed!')
       } else {
-        console.log('Not logged in, skipping refresh.');
+        console.log(`[${siteType}] Not logged in, skipping refresh.`);
       }
     } catch (error) {
-      console.error('Error during refresh:', error);
+      console.error(`Error during refresh for ${siteType}:`, error);
     } finally {
       if (isRunning) {
         timeoutId = setTimeout(runLoop, intervalMs);
@@ -71,7 +80,7 @@ async function main() {
   process.on('SIGTERM', cleanup);
 
   // Keep the script running
-  await new Promise(() => {}); 
+  await new Promise(() => { });
 }
 
 await main();
